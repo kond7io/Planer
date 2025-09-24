@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { StyleSheet, SectionList, View, Pressable, Alert } from 'react-native';
+import { StyleSheet, SectionList, View, Pressable, Alert, Platform } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useShoppingListSync } from '@/hooks/use-shopping-list-sync';
@@ -17,21 +17,28 @@ export default function ShoppingListsScreen() {
   const colorScheme = useColorScheme();
 
   const handleCreateList = () => {
-    Alert.prompt(
-      'Nowa lista zakupów',
-      'Wprowadź nazwę dla nowej listy:',
-      async (name) => {
-        if (name && user) {
-          try {
-            await createShoppingList(name, user.uid);
-          } catch (e) {
-            Alert.alert('Błąd', 'Nie udało się utworzyć listy.');
-          }
+    const createList = async (name: string | null) => {
+      if (name && user) {
+        try {
+          await createShoppingList(name, user.uid);
+        } catch (e) {
+          Alert.alert('Błąd', 'Nie udało się utworzyć listy.');
         }
-      },
-      'plain-text',
-      'Moja nowa lista'
-    );
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      const name = prompt('Wprowadź nazwę dla nowej listy:', 'Moja nowa lista');
+      createList(name);
+    } else {
+      Alert.prompt(
+        'Nowa lista zakupów',
+        'Wprowadź nazwę dla nowej listy:',
+        (name) => createList(name),
+        'plain-text',
+        'Moja nowa lista'
+      );
+    }
   };
 
   const sections = useMemo(() => {

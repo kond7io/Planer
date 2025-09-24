@@ -23,10 +23,10 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      // Nawigacja do głównej części aplikacji po udanym logowaniu
       router.replace('/(tabs)');
     } catch (error: any) {
-      Alert.alert('Błąd logowania', error.message);
+      console.error("Błąd logowania z Firebase:", error);
+      Alert.alert('Błąd logowania', `Wystąpił problem: ${error.code} - ${error.message}`);
     } finally {
       setLoading(false);
     }
