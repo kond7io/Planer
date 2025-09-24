@@ -1,45 +1,52 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { TextInput, StyleSheet, Platform, Pressable, Alert } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import useProductStore from '@/store/productStore';
 import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Colors } from '@/constants/theme';
-import useAuthStore from '@/store/authStore';
 
-export default function AddProductModal() {
+export default function EditProductModal() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const router = useRouter();
+  const colorScheme = useColorScheme();
+  const { products, updateProduct, removeProduct } = useProductStore();
+  const product = products.find((p) => p.id === id);
+
   const [name, setName] = useState('');
   const [quantity, setQuantity] = useState('1');
   const [category, setCategory] = useState('');
   const [imageURL, setImageURL] = useState('');
   const [loading, setLoading] = useState(false);
-  const { addProduct } = useProductStore();
-  const { user } = useAuthStore();
-  const router = useRouter();
-  const colorScheme = useColorScheme();
 
-  const handleSave = async () => {
-    if (!user) {
-      Alert.alert('Błąd', 'Musisz być zalogowany, aby dodać produkt.');
-      return;
+  useEffect(() => {
+    if (product) {
+      setName(product.name);
+      setQuantity(product.quantity.toString());
+      setCategory(product.category || '');
+      setImageURL(product.imageURL || '');
     }
+  }, [product]);
 
+  if (!product) {
+    return <ThemedView style={styles.container}><ThemedText>Nie znaleziono produktu.</ThemedText></ThemedView>;
+  }
+
+  const handleUpdate = async () => {
     const numQuantity = parseInt(quantity, 10);
     if (name.trim() && !isNaN(numQuantity) && numQuantity > 0) {
       setLoading(true);
       try {
-        await addProduct({
+        await updateProduct(product.id, {
           name: name.trim(),
           quantity: numQuantity,
-          status: 'Dostępny',
-          householdId: user.uid, // Używamy UID użytkownika jako ID gospodarstwa domowego
           category: category.trim() || undefined,
           imageURL: imageURL.trim() || undefined,
         });
         router.back();
       } catch (error) {
-        Alert.alert('Błąd', 'Nie udało się dodać produktu.');
+        Alert.alert('Błąd', 'Nie udało się zaktualizować produktu.');
       } finally {
         setLoading(false);
       }
@@ -47,6 +54,31 @@ export default function AddProductModal() {
       Alert.alert('Błąd walidacji', 'Proszę podać poprawną nazwę i ilość.');
     }
   };
+
+  const handleDelete = async () => {
+    Alert.alert(
+      'Usuń produkt',
+      'Czy na pewno chcesz usunąć ten produkt?',
+      [
+        { text: 'Anuluj', style: 'cancel' },
+        {
+          text: 'Usuń',
+          onPress: async () => {
+            setLoading(true);
+            try {
+              await removeProduct(product.id);
+              router.back();
+            } catch (error) {
+              Alert.alert('Błąd', 'Nie udało się usunąć produktu.');
+            } finally {
+              setLoading(false);
+            }
+          },
+          style: 'destructive',
+        },
+      ]
+    );
+  }
 
   const inputStyle = [
     styles.input,
@@ -58,12 +90,12 @@ export default function AddProductModal() {
 
   return (
     <ThemedView style={styles.container}>
-      <ThemedText type="title">Dodaj nowy produkt</ThemedText>
+      <ThemedText type="title">Edytuj produkt</ThemedText>
 
       <TextInput
         value={name}
         onChangeText={setName}
-        placeholder="Nazwa produktu (np. Mleko)"
+        placeholder="Nazwa produktu"
         style={inputStyle}
         placeholderTextColor={Colors.dark.icon}
       />
@@ -91,18 +123,17 @@ export default function AddProductModal() {
         placeholderTextColor={Colors.dark.icon}
       />
 
-      <Pressable onPress={handleSave} style={styles.button} disabled={loading}>
-        <ThemedText style={styles.buttonText}>{loading ? 'Zapisywanie...' : 'Zapisz produkt'}</ThemedText>
+      <Pressable onPress={handleUpdate} style={styles.button} disabled={loading}>
+        <ThemedText style={styles.buttonText}>{loading ? 'Zapisywanie...' : 'Zapisz zmiany'}</ThemedText>
       </Pressable>
 
-      {Platform.OS === 'ios' && (
-        <Pressable onPress={() => router.back()} style={[styles.button, styles.cancelButton]} disabled={loading}>
-          <ThemedText style={styles.buttonText}>Anuluj</ThemedText>
-        </Pressable>
-      )}
+      <Pressable onPress={handleDelete} style={[styles.button, styles.deleteButton]} disabled={loading}>
+        <ThemedText style={styles.buttonText}>Usuń produkt</ThemedText>
+      </Pressable>
     </ThemedView>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {
@@ -123,12 +154,12 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
   },
+  deleteButton: {
+    backgroundColor: 'red',
+  },
   buttonText: {
     color: 'white',
     fontWeight: 'bold',
     fontSize: 16,
   },
-  cancelButton: {
-    backgroundColor: '#555',
-  }
 });
