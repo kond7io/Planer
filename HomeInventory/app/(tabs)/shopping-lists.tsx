@@ -21,8 +21,9 @@ export default function ShoppingListsScreen() {
       if (name && user) {
         try {
           await createShoppingList(name, user.uid);
-        } catch (e) {
-          Alert.alert('Błąd', 'Nie udało się utworzyć listy.');
+        } catch (e: any) {
+          console.error("Błąd tworzenia listy:", e);
+          Alert.alert('Błąd', `Nie udało się utworzyć listy: ${e.message}`);
         }
       }
     };
