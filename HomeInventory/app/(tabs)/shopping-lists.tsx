@@ -42,8 +42,10 @@ export default function ShoppingListsScreen() {
   };
 
   const sections = useMemo(() => {
-    const active = shoppingLists.filter((list) => list.status === 'aktywna');
-    const completed = shoppingLists.filter((list) => list.status === 'zakończona');
+    // Zabezpieczenie przed błędem, gdy shoppingLists jest chwilowo `undefined`
+    const lists = Array.isArray(shoppingLists) ? shoppingLists : [];
+    const active = lists.filter((list) => list.status === 'aktywna');
+    const completed = lists.filter((list) => list.status === 'zakończona');
     return [
       { title: 'Aktywne listy', data: active },
       { title: 'Zakończone listy', data: completed },
