@@ -23,15 +23,13 @@ import { getAuth } from "firebase/auth";
 // Link do oficjalnej dokumentacji: https://firebase.google.com/docs/web/setup#available-libraries
 //
 const firebaseConfig = {
-  apiKey: "TWOJ_KLUCZ_API", // Wklej tutaj swój klucz API
-  authDomain: "TWOJA_DOMENA_AUTORYZACJI", // Wklej tutaj swoją domenę
-  projectId: "TWOJ_ID_PROJEKTU", // Wklej tutaj ID swojego projektu
-  storageBucket: "TWOJ_BUCKET_NA_PLIKI", // Wklej tutaj swój storage bucket
-  messagingSenderId: "TWOJ_ID_NADAWCY_WIADOMOSCI", // Wklej tutaj swój sender ID
-  appId: "TWOJ_ID_APLIKACJI", // Wklej tutaj swój app ID
-  // WAŻNE: Dodaj poniższy URL do Twojej Realtime Database.
-  // Znajdziesz go w konsoli Firebase -> Realtime Database (w głównym widoku, na górze).
-  databaseURL: "https://TWOJ-PROJEKT-ID.firebaseio.com"
+  apiKey: "AIzaSyBMEMyJaufiU0k-Nvwxgl6Y-E38rDi_B0Q",
+  authDomain: "planer-fc630.firebaseapp.com",
+  databaseURL: "https://planer-fc630-default-rtdb.firebaseio.com",
+  projectId: "planer-fc630",
+  storageBucket: "planer-fc630.firebasestorage.app",
+  messagingSenderId: "130877629103",
+  appId: "1:130877629103:web:e7bc9cb4b2f351b2592a5a"
 };
 
 // Inicjalizacja Firebase
