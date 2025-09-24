@@ -3,4 +3,7 @@ export interface Product {
   name: string;
   quantity: number;
   status: 'Dostępny' | 'Skończony';
+  category?: string;
+  imageURL?: string;
+  householdId: string;
 }

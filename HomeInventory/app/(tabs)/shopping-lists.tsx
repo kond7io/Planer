@@ -1,0 +1,126 @@
+import { useMemo } from 'react';
+import { StyleSheet, SectionList, View, Pressable, Alert } from 'react-native';
+import { ThemedText } from '@/components/themed-text';
+import { ThemedView } from '@/components/themed-view';
+import { useShoppingListSync } from '@/hooks/use-shopping-list-sync';
+import useShoppingListStore from '@/store/shoppingListStore';
+import useAuthStore from '@/store/authStore';
+import { Link } from 'expo-router';
+import { Colors } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import type { ShoppingList } from '@/types/ShoppingList';
+
+export default function ShoppingListsScreen() {
+  useShoppingListSync();
+  const { shoppingLists, createShoppingList } = useShoppingListStore();
+  const { user } = useAuthStore();
+  const colorScheme = useColorScheme();
+
+  const handleCreateList = () => {
+    Alert.prompt(
+      'Nowa lista zakupów',
+      'Wprowadź nazwę dla nowej listy:',
+      async (name) => {
+        if (name && user) {
+          try {
+            await createShoppingList(name, user.uid);
+          } catch (e) {
+            Alert.alert('Błąd', 'Nie udało się utworzyć listy.');
+          }
+        }
+      },
+      'plain-text',
+      'Moja nowa lista'
+    );
+  };
+
+  const sections = useMemo(() => {
+    const active = shoppingLists.filter((list) => list.status === 'aktywna');
+    const completed = shoppingLists.filter((list) => list.status === 'zakończona');
+    return [
+      { title: 'Aktywne listy', data: active },
+      { title: 'Zakończone listy', data: completed },
+    ];
+  }, [shoppingLists]);
+
+  const renderItem = ({ item }: { item: ShoppingList }) => (
+    <Link href={`/shopping-list/${item.id}`} asChild>
+      <Pressable>
+        <View style={[styles.itemContainer, { backgroundColor: Colors[colorScheme ?? 'light'].card }]}>
+          <ThemedText type="defaultSemiBold">{item.name}</ThemedText>
+          <ThemedText>{new Date(item.createdAt).toLocaleDateString()}</ThemedText>
+        </View>
+      </Pressable>
+    </Link>
+  );
+
+  return (
+    <ThemedView style={styles.container}>
+      <View style={styles.header}>
+        <ThemedText type="title">Listy Zakupowe</ThemedText>
+        <Pressable onPress={handleCreateList} style={styles.button}>
+          <ThemedText style={styles.buttonText}>Utwórz nową listę</ThemedText>
+        </Pressable>
+      </View>
+      <SectionList
+        sections={sections}
+        keyExtractor={(item) => item.id}
+        renderItem={renderItem}
+        renderSectionHeader={({ section: { title, data } }) =>
+          data.length > 0 ? <ThemedText style={styles.sectionHeader}>{title}</ThemedText> : null
+        }
+        contentContainerStyle={styles.listContent}
+        ListEmptyComponent={() => (
+            <View style={styles.emptyContainer}>
+              <ThemedText type="subtitle">Brak list zakupowych</ThemedText>
+              <ThemedText>Stwórz swoją pierwszą listę, aby zacząć!</ThemedText>
+            </View>
+          )}
+      />
+    </ThemedView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  button: {
+    backgroundColor: Colors.light.tint,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+  buttonText: {
+    color: 'white',
+    fontWeight: 'bold',
+  },
+  listContent: {
+    paddingBottom: 32,
+  },
+  itemContainer: {
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+  },
+  sectionHeader: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 50,
+  }
+});
