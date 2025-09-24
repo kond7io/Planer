@@ -1,0 +1,96 @@
+import { useState } from 'react';
+import { View, TextInput, Button, StyleSheet, Platform, Pressable } from 'react-native';
+import { useRouter } from 'expo-router';
+import useProductStore from '@/store/productStore';
+import { ThemedView } from '@/components/themed-view';
+import { ThemedText } from '@/components/themed-text';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { Colors } from '@/constants/theme';
+
+export default function AddProductModal() {
+  const [name, setName] = useState('');
+  const [quantity, setQuantity] = useState('1');
+  const addProduct = useProductStore((state) => state.addProduct);
+  const router = useRouter();
+  const colorScheme = useColorScheme();
+
+  const handleSave = () => {
+    const numQuantity = parseInt(quantity, 10);
+    if (name.trim() && !isNaN(numQuantity) && numQuantity > 0) {
+      addProduct(name.trim(), numQuantity);
+      router.back();
+    } else {
+      alert('Proszę podać poprawną nazwę i ilość.');
+    }
+  };
+
+  const inputStyle = [
+    styles.input,
+    {
+      borderColor: Colors[colorScheme ?? 'light'].text,
+      color: Colors[colorScheme ?? 'light'].text,
+    }
+  ];
+
+  return (
+    <ThemedView style={styles.container}>
+      <ThemedText type="title">Dodaj nowy produkt</ThemedText>
+
+      <TextInput
+        value={name}
+        onChangeText={setName}
+        placeholder="Nazwa produktu (np. Mleko)"
+        style={inputStyle}
+        placeholderTextColor={Colors.dark.icon}
+      />
+      <TextInput
+        value={quantity}
+        onChangeText={setQuantity}
+        placeholder="Ilość"
+        style={inputStyle}
+        keyboardType="numeric"
+        placeholderTextColor={Colors.dark.icon}
+      />
+
+      <Pressable onPress={handleSave} style={styles.button}>
+        <ThemedText style={styles.buttonText}>Zapisz produkt</ThemedText>
+      </Pressable>
+
+      {/* Add a dismiss button for iOS modal */}
+      {Platform.OS === 'ios' && (
+        <Pressable onPress={() => router.back()} style={[styles.button, styles.cancelButton]}>
+          <ThemedText style={styles.buttonText}>Anuluj</ThemedText>
+        </Pressable>
+      )}
+    </ThemedView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 24,
+    gap: 20,
+  },
+  input: {
+    height: 50,
+    borderWidth: 1,
+    paddingHorizontal: 15,
+    borderRadius: 8,
+    fontSize: 16,
+  },
+  button: {
+    backgroundColor: Colors.light.tint,
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  cancelButton: {
+    backgroundColor: '#555',
+  }
+});
