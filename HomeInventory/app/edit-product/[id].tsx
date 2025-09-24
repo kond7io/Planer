@@ -68,6 +68,7 @@ export default function EditProductModal() {
   };
 
   const performDelete = async () => {
+    if (!product) return;
     setLoading(true);
     try {
       await removeProduct(product.id);
