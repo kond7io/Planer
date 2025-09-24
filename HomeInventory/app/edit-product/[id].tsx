@@ -80,8 +80,9 @@ export default function EditProductModal() {
             try {
               await removeProduct(product.id);
               router.back();
-            } catch (error) {
-              Alert.alert('Błąd', 'Nie udało się usunąć produktu.');
+            } catch (error: any) {
+              console.error("Błąd usuwania z Firebase:", error);
+              Alert.alert('Błąd usuwania', `Wystąpił problem: ${error.message}`);
             } finally {
               setLoading(false);
             }
