@@ -67,7 +67,20 @@ export default function EditProductModal() {
     }
   };
 
-  const handleDelete = async () => {
+  const performDelete = async () => {
+    setLoading(true);
+    try {
+      await removeProduct(product.id);
+      router.back();
+    } catch (error: any) {
+      console.error("Błąd usuwania z Firebase:", error);
+      Alert.alert('Błąd usuwania', `Wystąpił problem: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = () => {
     Alert.alert(
       'Usuń produkt',
       'Czy na pewno chcesz usunąć ten produkt?',
@@ -75,23 +88,12 @@ export default function EditProductModal() {
         { text: 'Anuluj', style: 'cancel' },
         {
           text: 'Usuń',
-          onPress: async () => {
-            setLoading(true);
-            try {
-              await removeProduct(product.id);
-              router.back();
-            } catch (error: any) {
-              console.error("Błąd usuwania z Firebase:", error);
-              Alert.alert('Błąd usuwania', `Wystąpił problem: ${error.message}`);
-            } finally {
-              setLoading(false);
-            }
-          },
+          onPress: performDelete,
           style: 'destructive',
         },
       ]
     );
-  }
+  };
 
   const inputStyle = [
     styles.input,
