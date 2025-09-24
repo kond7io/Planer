@@ -12,7 +12,7 @@ import type { ShoppingList } from '@/types/ShoppingList';
 
 export default function ShoppingListsScreen() {
   useShoppingListSync();
-  const { shoppingLists, createShoppingList } = useShoppingListStore();
+  const store = useShoppingListStore();
   const { user } = useAuthStore();
   const colorScheme = useColorScheme();
 
@@ -20,7 +20,7 @@ export default function ShoppingListsScreen() {
     const createList = async (name: string | null) => {
       if (name && user) {
         try {
-          await createShoppingList(name, user.uid);
+          await store.createShoppingList(name, user.uid);
         } catch (e: any) {
           console.error("Błąd tworzenia listy:", e);
           Alert.alert('Błąd', `Nie udało się utworzyć listy: ${e.message}`);
