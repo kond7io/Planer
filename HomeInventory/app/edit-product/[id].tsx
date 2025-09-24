@@ -38,15 +38,27 @@ export default function EditProductModal() {
     if (name.trim() && !isNaN(numQuantity) && numQuantity > 0) {
       setLoading(true);
       try {
-        await updateProduct(product.id, {
+        const dataToUpdate: {
+          name: string;
+          quantity: number;
+          category?: string;
+          imageURL?: string;
+        } = {
           name: name.trim(),
           quantity: numQuantity,
-          category: category.trim() || undefined,
-          imageURL: imageURL.trim() || undefined,
-        });
+        };
+
+        if (category.trim()) {
+          dataToUpdate.category = category.trim();
+        }
+        if (imageURL.trim()) {
+          dataToUpdate.imageURL = imageURL.trim();
+        }
+
+        await updateProduct(product.id, dataToUpdate);
         router.back();
-      } catch (error) {
-        Alert.alert('Błąd', 'Nie udało się zaktualizować produktu.');
+      } catch (error: any) {
+        Alert.alert('Błąd aktualizacji', `Wystąpił problem: ${error.message}`);
       } finally {
         setLoading(false);
       }

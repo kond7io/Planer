@@ -29,14 +29,21 @@ export default function AddProductModal() {
     if (name.trim() && !isNaN(numQuantity) && numQuantity > 0) {
       setLoading(true);
       try {
-        await addProduct({
+        const productData: any = {
           name: name.trim(),
           quantity: numQuantity,
           status: 'Dostępny',
-          householdId: user.uid, // Używamy UID użytkownika jako ID gospodarstwa domowego
-          category: category.trim() || undefined,
-          imageURL: imageURL.trim() || undefined,
-        });
+          householdId: user.uid,
+        };
+
+        if (category.trim()) {
+          productData.category = category.trim();
+        }
+        if (imageURL.trim()) {
+          productData.imageURL = imageURL.trim();
+        }
+
+        await addProduct(productData);
         router.back();
       } catch (error: any) {
         // To wyświetli pełny błąd w konsoli, w której uruchomiłeś aplikację
