@@ -1,10 +1,10 @@
 import { create } from 'zustand';
 import type { ShoppingList, ShoppingListItem } from '@/types/ShoppingList';
+import { rtdb } from '@/lib/firebase/config'; // Zmieniony import na rtdb
+import { ref, set, update, push, child } from 'firebase/database';
+import useProductStore from './productStore';
+import { doc, writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
-import { doc, setDoc, updateDoc, arrayUnion, writeBatch } from 'firebase/firestore';
-import 'react-native-get-random-values';
-import { v4 as uuidv4 } from 'uuid';
-import useProductStore from './productStore'; // Import product store for stock updates
 
 interface ShoppingListState {
   shoppingLists: ShoppingList[];
@@ -20,68 +20,59 @@ const useShoppingListStore = create<ShoppingListState>((set, get) => ({
   setShoppingLists: (lists) => set({ shoppingLists: lists }),
 
   createShoppingList: async (name, householdId) => {
-    const newListId = uuidv4();
-    const newList: ShoppingList = {
-      id: newListId,
+    const newListRef = push(child(ref(rtdb), 'shoppingLists'));
+    const newListId = newListRef.key;
+    if (!newListId) return;
+
+    const newList: Omit<ShoppingList, 'id'> = {
       name,
       householdId,
-      createdAt: new Date(),
+      createdAt: new Date().toISOString(), // RTDB preferuje stringi ISO
       status: 'aktywna',
-      items: [],
+      items: {}, // W RTDB obiekty są lepsze niż tablice
     };
-    const listRef = doc(db, 'shoppingLists', newListId);
-    await setDoc(listRef, newList);
+    await set(newListRef, newList);
   },
 
   addProductToList: async (listId, itemData) => {
+    const newItemRef = push(child(ref(rtdb), `shoppingLists/${listId}/items`));
+    const newItemId = newItemRef.key;
+    if (!newItemId) return;
+
     const newItem: ShoppingListItem = {
       ...itemData,
-      id: uuidv4(),
+      id: newItemId,
       isTaken: false,
     };
-    const listRef = doc(db, 'shoppingLists', listId);
-    await updateDoc(listRef, {
-      items: arrayUnion(newItem),
-    });
+    await set(newItemRef, newItem);
   },
 
   toggleItemTaken: async (listId, itemId, isTaken) => {
-    const lists = get().shoppingLists;
-    const list = lists.find((l) => l.id === listId);
-    if (!list) return;
-
-    const item = list.items.find((i) => i.id === itemId);
-    if (!item) return;
-
-    const updatedItem = { ...item, isTaken: !isTaken };
-    const updatedItems = list.items.map((i) => (i.id === itemId ? updatedItem : i));
-    const listRef = doc(db, 'shoppingLists', listId);
-    await updateDoc(listRef, { items: updatedItems });
+    const itemRef = ref(rtdb, `shoppingLists/${listId}/items/${itemId}/isTaken`);
+    await set(itemRef, !isTaken);
   },
 
   finishShopping: async (listId, householdId) => {
-    const batch = writeBatch(db);
     const list = get().shoppingLists.find((l) => l.id === listId);
-    if (!list) return;
+    if (!list || !list.items) return;
 
+    // Logika aktualizacji Firestore pozostaje taka sama, ale dane wejściowe się zmieniają
+    const batch = writeBatch(db);
     const products = useProductStore.getState().products;
-    const takenItems = list.items.filter((item) => item.isTaken);
+    const takenItems = Object.values(list.items).filter((item) => item.isTaken);
 
     for (const item of takenItems) {
-      // Check if a product with the same name already exists
       const existingProduct = products.find(p => p.name.toLowerCase() === item.name.toLowerCase() && p.householdId === householdId);
 
       if (existingProduct) {
-        // Product exists, update its quantity
         const productRef = doc(db, 'products', existingProduct.id);
         batch.update(productRef, {
           quantity: existingProduct.quantity + item.quantity,
           status: 'Dostępny',
         });
       } else {
-        // Product does not exist, create a new one
-        const newProductId = uuidv4();
-        const newProductRef = doc(db, 'products', newProductId);
+        const newProductId = push(child(ref(rtdb), 'products')).key; // To powinno być w Firestore
+        const newProductRef = doc(db, 'products', newProductId!);
         batch.set(newProductRef, {
           id: newProductId,
           name: item.name,
@@ -91,12 +82,11 @@ const useShoppingListStore = create<ShoppingListState>((set, get) => ({
         });
       }
     }
-
-    // Mark the shopping list as 'zakończona'
-    const listRef = doc(db, 'shoppingLists', listId);
-    batch.update(listRef, { status: 'zakończona' });
-
     await batch.commit();
+
+    // Na koniec oznaczamy listę jako zakończoną w Realtime Database
+    const listStatusRef = ref(rtdb, `shoppingLists/${listId}/status`);
+    await set(listStatusRef, 'zakończona');
   },
 }));
 

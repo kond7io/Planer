@@ -11,8 +11,8 @@ export interface ShoppingListItem {
 export interface ShoppingList {
   id: string;
   name: string;
-  createdAt: Date;
+  createdAt: string; // W RTDB daty często przechowuje się jako stringi ISO
   householdId: string;
   status: 'aktywna' | 'zakończona';
-  items: ShoppingListItem[];
+  items: { [key: string]: ShoppingListItem }; // W RTDB zagnieżdżone listy to obiekty
 }

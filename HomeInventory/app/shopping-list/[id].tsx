@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { View, StyleSheet, FlatList, Pressable, Alert, TextInput } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ThemedView } from '@/components/themed-view';
@@ -18,6 +18,11 @@ export default function ShoppingListDetailScreen() {
 
   const [newItemName, setNewItemName] = useState('');
   const [newItemQuantity, setNewItemQuantity] = useState('1');
+
+  const itemsArray = useMemo(() => {
+    if (!list?.items) return [];
+    return Object.values(list.items);
+  }, [list?.items]);
 
   if (!list) {
     return (
@@ -105,7 +110,7 @@ export default function ShoppingListDetailScreen() {
       )}
 
       <FlatList
-        data={list.items}
+        data={itemsArray}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
         ListEmptyComponent={<ThemedText>Brak produktów na liście.</ThemedText>}
