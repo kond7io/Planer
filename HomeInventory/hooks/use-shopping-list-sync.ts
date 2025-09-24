@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
-import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
-import { db } from '@/lib/firebase/config';
+import { ref, query, orderByChild, equalTo, onValue, off } from 'firebase/database';
+import { rtdb } from '@/lib/firebase/config';
 import useShoppingListStore from '@/store/shoppingListStore';
 import useAuthStore from '@/store/authStore';
 import type { ShoppingList } from '@/types/ShoppingList';
@@ -16,26 +16,28 @@ export function useShoppingListSync() {
     }
 
     const householdId = user.uid;
-    const listsCollection = collection(db, 'shoppingLists');
-    const q = query(
-      listsCollection,
-      where('householdId', '==', householdId),
-      orderBy('createdAt', 'desc')
+    const listsQuery = query(
+      ref(rtdb, 'shoppingLists'),
+      orderByChild('householdId'),
+      equalTo(householdId)
     );
 
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const lists: ShoppingList[] = [];
-      querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        lists.push({
-          ...data,
-          id: doc.id,
-          createdAt: data.createdAt.toDate(), // Konwersja Timestamp na Date
-        } as ShoppingList);
-      });
-      setShoppingLists(lists);
+    const listener = onValue(listsQuery, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const listsArray: ShoppingList[] = Object.keys(data).map(key => ({
+          id: key,
+          ...data[key],
+        }));
+        // Sortowanie po stronie klienta, ponieważ RTDB sortuje tylko po jednym kluczu
+        listsArray.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        setShoppingLists(listsArray);
+      } else {
+        setShoppingLists([]);
+      }
     });
 
-    return () => unsubscribe();
+    // Zwracamy funkcję czyszczącą, która odłączy listenera
+    return () => off(listsQuery, 'value', listener);
   }, [user, setShoppingLists]);
 }

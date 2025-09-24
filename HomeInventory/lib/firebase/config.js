@@ -1,6 +1,7 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
+import { getDatabase } from "firebase/database";
 import { getAuth } from "firebase/auth";
 
 // ===============================================================================================
@@ -27,14 +28,20 @@ const firebaseConfig = {
   projectId: "TWOJ_ID_PROJEKTU", // Wklej tutaj ID swojego projektu
   storageBucket: "TWOJ_BUCKET_NA_PLIKI", // Wklej tutaj swój storage bucket
   messagingSenderId: "TWOJ_ID_NADAWCY_WIADOMOSCI", // Wklej tutaj swój sender ID
-  appId: "TWOJ_ID_APLIKACJI" // Wklej tutaj swój app ID
+  appId: "TWOJ_ID_APLIKACJI", // Wklej tutaj swój app ID
+  // WAŻNE: Dodaj poniższy URL do Twojej Realtime Database.
+  // Znajdziesz go w konsoli Firebase -> Realtime Database (w głównym widoku, na górze).
+  databaseURL: "https://TWOJ-PROJEKT-ID.firebaseio.com"
 };
 
 // Inicjalizacja Firebase
 const app = initializeApp(firebaseConfig);
 
-// Inicjalizacja Cloud Firestore i pobranie referencji do usługi
+// Inicjalizacja Cloud Firestore (dla produktów)
 export const db = getFirestore(app);
 
-// Inicjalizacja Firebase Authentication i pobranie referencji do usługi
+// Inicjalizacja Realtime Database (dla list zakupowych)
+export const rtdb = getDatabase(app);
+
+// Inicjalizacja Firebase Authentication
 export const auth = getAuth(app);
