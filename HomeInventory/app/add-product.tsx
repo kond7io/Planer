@@ -38,8 +38,12 @@ export default function AddProductModal() {
           imageURL: imageURL.trim() || undefined,
         });
         router.back();
-      } catch (error) {
-        Alert.alert('Błąd', 'Nie udało się dodać produktu.');
+      } catch (error: any) {
+        // To wyświetli pełny błąd w konsoli, w której uruchomiłeś aplikację
+        console.error("Błąd zapisu do Firebase:", error);
+
+        // To pokaże szczegółową wiadomość o błędzie w alercie na telefonie
+        Alert.alert('Błąd zapisu', `Wystąpił problem: ${error.message}`);
       } finally {
         setLoading(false);
       }
